@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block main %}
+<h1 class="headheader"> Results </h1>
+    {% for key, value in aspects %}
+    <span class="aspects">
+        <h3>{{ key }}</h3>
+        <h4>{{ value["measurement"] }}</h4>
+        <span>
+            <h4 class="{{ 'green' if value['result'] == 'Pass' else 'grey' }}">
+                {{ 'Pass' if value['result'] == 'Pass' else 'Pass/' }}
+            </h4>
+            <h4 class="{{ 'grey' if value['result'] == 'Pass' else 'red' }}">
+                {{ '/Fail' if value['result'] == 'Pass' else 'Fail' }}
+            </h4>
+        </span>
+    </span>
+    {% endfor %}
+{% endblock %}
