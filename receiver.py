@@ -1,4 +1,4 @@
-from RF24 import *
+from RF24 import RF24
 from time import sleep
 # Setup radio and GPIO pins
 
