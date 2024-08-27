@@ -1,6 +1,5 @@
-from RF24 
-import *from time 
-import sleep
+from RF24 import *
+from time import sleep
 # Setup radio and GPIO pins
 
 radio = RF24(22, 0)  # CE is connected to GPIO 22, CSN to CE0 (GPIO 8)
