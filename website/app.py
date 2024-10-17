@@ -1,4 +1,5 @@
-from flask import Flask, render_template, flash, render_template, redirect, request, session
+from flask import Flask, render_template, flash, render_template, redirect, request, session, send_file
+import os
 
 app = Flask(__name__)
 
@@ -39,6 +40,9 @@ def feedback():
     
     return render_template('results.html', aspects=aspects)
 
+@app.route('/image')
+def image():
+    return send_file('output.png', mimetype='image/png')
 
 if __name__ == '__main__':
     app.run(debug=True)

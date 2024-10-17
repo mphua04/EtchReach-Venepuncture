@@ -4,7 +4,10 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from pygame.locals import *
 from helper import read_quaternion_data, parse_quaternion
+import numpy as np
 
+# Global variable to store reference orientation
+reference_orientation = None
 useSerial = True # set true for using serial for data transmission, false for wifi
 useQuat = True   # set true for using quaternions, false for using y,p,r angles
 
@@ -21,6 +24,7 @@ else:
     sock.bind((UDP_IP, UDP_PORT))
 
 def main():
+    global reference_orientation
     video_flags = OPENGL | DOUBLEBUF
     pygame.init()
     screen = pygame.display.set_mode((640, 480), video_flags)
@@ -35,8 +39,13 @@ def main():
             break
         if(useQuat):
             [w, nx, ny, nz] = read_data()
+            if reference_orientation is None:
+                reference_orientation = [w, nx, ny, nz]
+                reference_orientation = normalize_quaternion(reference_orientation)
         else:
             [yaw, pitch, roll] = read_data()
+            if reference_orientation is None:
+                reference_orientation = [yaw, pitch, roll]
         if(useQuat):
             draw(w, nx, ny, nz)
         else:
@@ -137,9 +146,11 @@ def draw(w, nx, ny, nz):
     drawText((-2.6, 1.6, 2), "Module to visualize quaternion or Euler angles data", 16)
     drawText((-2.6, -2, 2), "Press Escape to exit.", 16)
 
+    draw_reference_rectangle()
+
     if(useQuat):
-        # [yaw, pitch , roll] = quat_to_ypr([w, nx, ny, nz])
-        # drawText((-2.6, -1.8, 2), "Yaw: %f, Pitch: %f, Roll: %f" %(yaw, pitch, roll), 16)
+        [yaw, pitch , roll] = quat_to_ypr([w, nx, ny, nz])
+        drawText((-2.6, -1.8, 2), "Yaw: %f, Pitch: %f, Roll: %f" %(yaw, pitch, roll), 16)
         glRotatef(2 * math.acos(w) * 180.00/math.pi, -1 * nx, nz, ny)
     else:
         yaw = nx
@@ -205,6 +216,61 @@ def quat_to_ypr(q):
     yaw   -= -0.13  # Declination at Chandrapur, Maharashtra is - 0 degress 13 min
     roll  *= 180.0 / math.pi
     return [yaw, pitch, roll]
+
+def draw_reference_rectangle():
+    """Draw a fixed rectangle/cube based on the reference orientation."""
+    global reference_orientation
+    
+    if reference_orientation is not None:
+        [yaw, pitch , roll] = quat_to_ypr(reference_orientation)
+        drawText((-2.6, -1.4, 2), "Initial Yaw: %f, Pitch: %f, Roll: %f" %(yaw, pitch, roll), 16)
+
+        glPushMatrix()
+        glRotatef(np.degrees(2 * np.arccos(reference_orientation[0])),  # angle
+                  reference_orientation[1], reference_orientation[2], reference_orientation[3])  # axis
+
+        glBegin(GL_QUADS)
+        glColor3f(0.0, 1.0, 0.0)
+        glVertex3f(1.0, 0.2, -1.0)
+        glVertex3f(-1.0, 0.2, -1.0)
+        glVertex3f(-1.0, 0.2, 1.0)
+        glVertex3f(1.0, 0.2, 1.0)
+
+        glColor3f(1.0, 0.5, 0.0)
+        glVertex3f(1.0, -0.2, 1.0)
+        glVertex3f(-1.0, -0.2, 1.0)
+        glVertex3f(-1.0, -0.2, -1.0)
+        glVertex3f(1.0, -0.2, -1.0)
+
+        glColor3f(1.0, 0.0, 0.0)
+        glVertex3f(1.0, 0.2, 1.0)
+        glVertex3f(-1.0, 0.2, 1.0)
+        glVertex3f(-1.0, -0.2, 1.0)
+        glVertex3f(1.0, -0.2, 1.0)
+
+        glColor3f(1.0, 1.0, 0.0)
+        glVertex3f(1.0, -0.2, -1.0)
+        glVertex3f(-1.0, -0.2, -1.0)
+        glVertex3f(-1.0, 0.2, -1.0)
+        glVertex3f(1.0, 0.2, -1.0)
+
+        glColor3f(0.0, 0.0, 1.0)
+        glVertex3f(-1.0, 0.2, 1.0)
+        glVertex3f(-1.0, 0.2, -1.0)
+        glVertex3f(-1.0, -0.2, -1.0)
+        glVertex3f(-1.0, -0.2, 1.0)
+
+        glColor3f(1.0, 0.0, 1.0)
+        glVertex3f(1.0, 0.2, -1.0)
+        glVertex3f(1.0, 0.2, 1.0)
+        glVertex3f(1.0, -0.2, 1.0)
+        glVertex3f(1.0, -0.2, -1.0)
+        glEnd()
+        glPopMatrix()
+        
+def normalize_quaternion(q):
+    norm = math.sqrt(q[0]**2 + q[1]**2 + q[2]**2 + q[3]**2)
+    return [q[0]/norm, q[1]/norm, q[2]/norm, q[3]/norm]
 
 
 if __name__ == '__main__':
